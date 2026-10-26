@@ -185,7 +185,38 @@ class VoiceSceneMapper:
                 ]
                 timeline_scenes.append(t_scene)
 
-        # Case 2: Proportional mapping with natural speech pause snapping
+        # Case 2: Visual Spec v1.0 standard 3-scene archetype mapping
+        # Scene 1 (Hook): Fast 3.0-3.8s kinetic hook
+        # Scene 2 (Stage): Long central architecture progressive disclosure (~3.5s to ~24s)
+        # Scene 3 (Payoff): Final 5-6s payoff verdict card
+        elif num_scenes == 3:
+            s1_raw = sentences[0]["end"] if (sentences and sentences[0]["end"] <= 4.2) else 3.5
+            s1_end = cls._snap_to_nearest_pause(s1_raw, all_words)
+            s2_raw = max(s1_end + 3.0, total_audio_duration - 5.8)
+            s2_end = cls._snap_to_nearest_pause(s2_raw, all_words)
+            scene_cuts = [s1_end, s2_end, total_audio_duration]
+
+            prev_end = 0.0
+            for idx, scene_spec in enumerate(storyboard.scenes):
+                start = prev_end
+                end = scene_cuts[idx]
+                prev_end = end
+                scene_words = [w for w in all_words if start <= w["start"] <= end + 0.05]
+
+                t_scene = TimelineScene(
+                    spec=scene_spec,
+                    start_time=round(start, 3),
+                    end_time=round(end, 3),
+                    duration=max(0.1, round(end - start, 3)),
+                    words=scene_words
+                )
+                t_scene.components = [
+                    TimelineComponent(spec=c, scene_start=round(start, 3), scene_end=round(end, 3))
+                    for c in scene_spec.components
+                ]
+                timeline_scenes.append(t_scene)
+
+        # Case 3: General Proportional mapping with natural speech pause snapping
         else:
             time_per_scene = total_audio_duration / num_scenes
             prev_end = 0.0
@@ -197,7 +228,6 @@ class VoiceSceneMapper:
                 else:
                     raw_end = (idx + 1) * time_per_scene
                     end = cls._snap_to_nearest_pause(raw_end, all_words)
-                    # Guard minimum scene duration
                     if end - start < 0.8:
                         end = start + 0.8
 

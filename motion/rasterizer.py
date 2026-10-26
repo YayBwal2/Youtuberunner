@@ -50,11 +50,27 @@ class MotionRenderer:
     Option B: Disk-cached frames + FFmpeg concat
     Provides timing and resource profiling for benchmarking.
     """
-    def __init__(self, width: int = VIDEO_WIDTH, height: int = VIDEO_HEIGHT, fps: int = VIDEO_FPS):
+    def __init__(self, width: int = VIDEO_WIDTH, height: int = VIDEO_HEIGHT, fps: int = VIDEO_FPS, auto_purge: bool = True):
         self.width = width
         self.height = height
         self.fps = fps
         self.svg_builder = SVGBuilder(width, height)
+        if auto_purge:
+            self.startup_pre_purge()
+
+    @staticmethod
+    def startup_pre_purge():
+        """
+        Purges any leftover temporary render frames from previous interrupted runs.
+        Ensures 0 MB residual disk footprint on startup.
+        """
+        import shutil
+        frames_dir = TEMP_DIR / "render_frames"
+        if frames_dir.exists():
+            try:
+                shutil.rmtree(frames_dir)
+            except Exception:
+                pass
 
     def render_memory_pipe(
         self,
@@ -97,8 +113,11 @@ class MotionRenderer:
             "-i", str(audio_path),    # Audio input
             "-c:v", "libx264",
             "-pix_fmt", "yuv420p",
-            "-preset", "veryfast",
-            "-crf", "19",
+            "-preset", "fast",
+            "-crf", "16",
+            "-b:v", "6M",
+            "-maxrate", "10M",
+            "-bufsize", "12M",
             "-c:a", "aac",
             "-b:a", "192k",
             "-shortest",
@@ -109,7 +128,7 @@ class MotionRenderer:
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE
+            stderr=subprocess.DEVNULL
         )
 
         timeline_engine = TimelineEngine(scenes)
@@ -136,7 +155,6 @@ class MotionRenderer:
             process.stdin.write(raw_rgb)
 
         process.stdin.close()
-        stderr_output = process.stderr.read()
         process.wait()
 
         elapsed = time.time() - start_time
@@ -219,8 +237,11 @@ class MotionRenderer:
                 "-i", str(audio_path),
                 "-c:v", "libx264",
                 "-pix_fmt", "yuv420p",
-                "-preset", "veryfast",
-                "-crf", "19",
+                "-preset", "fast",
+                "-crf", "16",
+                "-b:v", "6M",
+                "-maxrate", "10M",
+                "-bufsize", "12M",
                 "-c:a", "aac",
                 "-b:a", "192k",
                 "-shortest",

@@ -55,10 +55,11 @@ def upload_video(
     title: str,
     description: str,
     tags: list[str],
-    privacy_status: Optional[str] = None
+    privacy_status: Optional[str] = None,
+    thumbnail_path: Optional[str] = None
 ) -> Optional[str]:
     """
-    Uploads a video to YouTube with metadata.
+    Uploads a video to YouTube with metadata and optional custom thumbnail.
     Returns the YouTube Video ID if successful, or None.
     """
     from googleapiclient.http import MediaFileUpload
@@ -106,6 +107,17 @@ def upload_video(
     video_url = f"https://youtu.be/{video_id}"
     print(f"  ✓ Successfully uploaded! Video ID: {video_id}")
     print(f"  ✓ URL: {video_url} ({privacy.upper()} mode)")
+
+    # Upload custom thumbnail if provided
+    if thumbnail_path and Path(thumbnail_path).exists():
+        try:
+            service.thumbnails().set(
+                videoId=video_id,
+                media_body=MediaFileUpload(thumbnail_path, mimetype="image/png")
+            ).execute()
+            print(f"  ✓ Custom thumbnail uploaded successfully!")
+        except Exception as e:
+            print(f"  [INFO] Channel thumbnail upload notice: {e}")
 
     return video_id
 

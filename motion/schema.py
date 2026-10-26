@@ -17,6 +17,9 @@ class ComponentType(str, Enum):
     ARCHITECTURE_DIAGRAM = "ArchitectureDiagram"
     METRIC_CARD = "MetricCard"
     STATUS_PILL = "StatusPill"
+    HOOK_TYPO_HERO = "HookTypoHero"
+    PROGRESSIVE_STAGE = "ProgressiveStage"
+    PAYOFF_VERDICT_CARD = "PayoffVerdictCard"
 
 
 class MotionSpec(BaseModel):

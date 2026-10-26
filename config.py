@@ -19,12 +19,12 @@ FONTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Gemini API
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 # TTS Voice Settings (Microsoft edge-tts - 100% Free)
-# Top options: en-US-ChristopherNeural, en-US-GuyNeural, en-US-BrianNeural, en-US-AndrewMultilingualNeural
-VOICE_NAME = os.getenv("VOICE_NAME", "en-US-ChristopherNeural")
-VOICE_RATE = os.getenv("VOICE_RATE", "+10%")
+# Selected voice: en-US-GuyNeural (Energetic, natural tech narrator)
+VOICE_NAME = os.getenv("VOICE_NAME", "en-US-GuyNeural")
+VOICE_RATE = os.getenv("VOICE_RATE", "+0%")
 VOICE_PITCH = os.getenv("VOICE_PITCH", "+0Hz")
 
 # Video Settings (YouTube Shorts 9:16)
@@ -78,6 +78,11 @@ YOUTUBE_PRIVACY_STATUS = os.getenv("YOUTUBE_PRIVACY_STATUS", "private")  # priva
 YOUTUBE_CLIENT_SECRETS_FILE = os.getenv("YOUTUBE_CLIENT_SECRETS_FILE", str(BASE_DIR / "client_secret.json"))
 YOUTUBE_TOKEN_FILE = os.getenv("YOUTUBE_TOKEN_FILE", str(BASE_DIR / "token.json"))
 YOUTUBE_CATEGORY_ID = "28"  # 28 = Science & Technology
+
+# VPS Storage Lifecycle & Retention Settings
+# Keeps videos for N days, then purges heavy .mp4/.mp3 while keeping script.json metadata
+STORAGE_RETENTION_DAYS = int(os.getenv("STORAGE_RETENTION_DAYS", "3"))  # Default 3 days for lean VPS
+AUTO_CLEANUP_AFTER_UPLOAD = os.getenv("AUTO_CLEANUP_AFTER_UPLOAD", "true").lower() == "true"
 
 # Curated High-RPM Viral Tech & AI Topic Pool
 CURATED_TOPICS = [

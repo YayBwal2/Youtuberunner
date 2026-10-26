@@ -30,37 +30,43 @@ def job():
         print(f"[ERROR] Scheduled job failed: {e}")
 
 
-def print_cron_instructions():
+def print_cron_instructions(times_list: list[str]):
     python_bin = PROJECT_ROOT / ".venv" / "bin" / "python"
     script_path = PROJECT_ROOT / "run.py"
     log_path = PROJECT_ROOT / "outputs" / "cron.log"
-    print("\n" + "=" * 60)
-    print("📋 LINUX CRONTAB SETUP (Zero RAM when idle)")
-    print("=" * 60)
-    print("Run `crontab -e` on your VPS and paste the following line:")
-    print(f"\n0 18 * * * cd '{PROJECT_ROOT}' && {python_bin} {script_path} >> '{log_path}' 2>&1\n")
-    print("This will execute every day at 18:00 UTC automatically.")
-    print("=" * 60 + "\n")
+    print("\n" + "=" * 65)
+    print("📋 LINUX CRONTAB SETUP (Zero RAM Idle - 3 Videos/Day)")
+    print("=" * 65)
+    print("Run `crontab -e` on your server and paste the following lines:")
+    for t_str in times_list:
+        h, m = t_str.split(":")
+        print(f"{int(m)} {int(h)} * * * cd '{PROJECT_ROOT}' && {python_bin} {script_path} >> '{log_path}' 2>&1")
+    print("\nThis will automatically generate and upload 3 videos daily.")
+    print("=" * 65 + "\n")
 
 
 def main():
     parser = argparse.ArgumentParser(description="YouTube Runner Automated Scheduler")
-    parser.add_argument("--time", type=str, default="18:00", help="Time of day to run (HH:MM format)")
+    parser.add_argument("--times", type=str, default="06:00,12:00,18:00", help="Comma-separated times (e.g. '06:00,12:00,18:00' for 3 videos/day)")
     parser.add_argument("--now", action="store_true", help="Run once immediately on startup")
     parser.add_argument("--cron-help", action="store_true", help="Show Linux crontab instructions")
     args = parser.parse_args()
 
+    times_list = [t.strip() for t in args.times.split(",") if t.strip()]
+
     if args.cron_help:
-        print_cron_instructions()
+        print_cron_instructions(times_list)
         return
 
-    print(f"⏰ Scheduler active! YouTube Runner will run daily at {args.time}...")
+    print(f"⏰ Scheduler active! YouTube Runner will run {len(times_list)} times daily at: {', '.join(times_list)}...")
     
     if args.now:
         print("▶️ Executing immediate run (--now)...")
         job()
 
-    schedule.every().day.at(args.time).do(job)
+    for t_str in times_list:
+        schedule.every().day.at(t_str).do(job)
+
 
     while True:
         schedule.run_pending()
