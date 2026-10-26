@@ -1,0 +1,25 @@
+# Python & Virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Secrets & Credentials
+.env
+client_secret*.json
+token.pickle
+token.json
+
+# Outputs & Temporary media
+outputs/
+temp/
+*.mp4
+*.mp3
+*.wav
+*.vtt
+*.srt
+
+# macOS
+.DS_Store
