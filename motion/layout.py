@@ -51,8 +51,8 @@ class LayoutEngine:
     def _compute_slots(self) -> Dict[SemanticSlot, LayoutBox]:
         sa = self.safe_area
         
-        # 1. Headline Top (Safe top area: 240px to 400px)
-        headline_h = 160
+        # 1. Headline Top (Safe top area: 240px to 390px)
+        headline_h = 150
         headline_box = LayoutBox(
             x=sa.x,
             y=sa.y,
@@ -61,38 +61,40 @@ class LayoutEngine:
             slot=SemanticSlot.HEADLINE_TOP
         )
 
-        # 2. Hero Card (Main stage: 440px to 1200px)
+        # 2. Hero Card (Main stage: 420px to 1220px, strictly inside safe area)
+        hero_w = sa.width
+        hero_x = sa.x
         hero_y = sa.y + headline_h + 30
-        hero_h = 740
+        hero_h = 780
         hero_box = LayoutBox(
-            x=sa.x,
+            x=hero_x,
             y=hero_y,
-            width=sa.width,
+            width=hero_w,
             height=hero_h,
             slot=SemanticSlot.HERO_CARD
         )
 
-        # 3. Card Center (Middle 50% of safe canvas)
-        center_h = 680
+        # 3. Card Center (Middle safe canvas)
+        center_h = 740
         center_y = sa.center_y - center_h // 2
         center_box = LayoutBox(
-            x=sa.x,
+            x=hero_x,
             y=center_y,
-            width=sa.width,
+            width=hero_w,
             height=center_h,
             slot=SemanticSlot.CARD_CENTER
         )
 
-        # 4. Diagram Split (Mid stage: same bounds as Hero Card)
+        # 4. Diagram Split (Same bounds as Hero Card)
         diag_box = LayoutBox(
-            x=sa.x,
+            x=hero_x,
             y=hero_y,
-            width=sa.width,
+            width=hero_w,
             height=hero_h,
             slot=SemanticSlot.DIAGRAM_SPLIT
         )
 
-        # 5. Ticker Bottom (Lower third: 1260px to 1540px)
+        # 5. Ticker Bottom (Lower third: 1280px to 1540px)
         ticker_y = hero_y + hero_h + 30
         ticker_h = sa.bottom - ticker_y
         ticker_box = LayoutBox(

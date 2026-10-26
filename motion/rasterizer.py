@@ -158,80 +158,88 @@ class MotionRenderer:
         audio_path: str,
         total_duration: float,
         output_path: str,
-        all_words: Optional[List[Dict[str, Any]]] = None
+        all_words: Optional[List[Dict[str, Any]]] = None,
+        cleanup_frames: bool = True
     ) -> Dict[str, Any]:
         """
         Option B: Writes PNG frames to disk first, then concatenates with FFmpeg.
+        Automatically purges temporary PNG frame files after encoding to maintain zero residual disk usage.
         """
+        import shutil
         start_time = time.time()
-        frames_dir = TEMP_DIR / "benchmark_frames"
+        frames_dir = TEMP_DIR / "render_frames"
         frames_dir.mkdir(parents=True, exist_ok=True)
-        # Clear existing
-        for p in frames_dir.glob("*.png"):
-            p.unlink()
 
-        total_frames = int(total_duration * self.fps)
-        all_words = all_words or []
+        try:
+            # Clear any preexisting frames
+            for p in frames_dir.glob("*.png"):
+                p.unlink()
 
-        word_chunks = []
-        chunk_size = 3
-        for i in range(0, len(all_words), chunk_size):
-            group = all_words[i:i + chunk_size]
-            if group:
-                word_chunks.append({
-                    "start": group[0]["start"],
-                    "end": group[-1]["end"],
-                    "words": group
-                })
+            total_frames = int(total_duration * self.fps)
+            all_words = all_words or []
 
-        timeline_engine = TimelineEngine(scenes)
+            word_chunks = []
+            chunk_size = 3
+            for i in range(0, len(all_words), chunk_size):
+                group = all_words[i:i + chunk_size]
+                if group:
+                    word_chunks.append({
+                        "start": group[0]["start"],
+                        "end": group[-1]["end"],
+                        "words": group
+                    })
 
-        for frame_idx in range(total_frames):
-            t = frame_idx / self.fps
-            active_scene = timeline_engine.get_active_scene(t)
-            
-            active_chunk = None
-            for ch in word_chunks:
-                if ch["start"] <= t <= ch["end"] + 0.15:
-                    active_chunk = ch
-                    break
+            timeline_engine = TimelineEngine(scenes)
 
-            svg = self.svg_builder.build_frame_svg(
-                scene=active_scene,
-                t=t,
-                global_duration=total_duration,
-                active_chunk=active_chunk
-            )
-            frame_path = frames_dir / f"frame_{frame_idx:05d}.png"
-            cairosvg.svg2png(bytestring=svg.encode("utf-8"), write_to=str(frame_path))
+            for frame_idx in range(total_frames):
+                t = frame_idx / self.fps
+                active_scene = timeline_engine.get_active_scene(t)
+                
+                active_chunk = None
+                for ch in word_chunks:
+                    if ch["start"] <= t <= ch["end"] + 0.15:
+                        active_chunk = ch
+                        break
 
-        # Run FFmpeg concat from disk
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-r", str(self.fps),
-            "-i", str(frames_dir / "frame_%05d.png"),
-            "-i", str(audio_path),
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", "veryfast",
-            "-crf", "19",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-shortest",
-            str(output_path)
-        ]
-        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                svg = self.svg_builder.build_frame_svg(
+                    scene=active_scene,
+                    t=t,
+                    global_duration=total_duration,
+                    active_chunk=active_chunk
+                )
+                frame_path = frames_dir / f"frame_{frame_idx:05d}.png"
+                cairosvg.svg2png(bytestring=svg.encode("utf-8"), write_to=str(frame_path))
 
-        elapsed = time.time() - start_time
-        fps_achieved = total_frames / max(0.001, elapsed)
+            # Run FFmpeg concat from disk
+            cmd = [
+                "ffmpeg",
+                "-y",
+                "-r", str(self.fps),
+                "-i", str(frames_dir / "frame_%05d.png"),
+                "-i", str(audio_path),
+                "-c:v", "libx264",
+                "-pix_fmt", "yuv420p",
+                "-preset", "veryfast",
+                "-crf", "19",
+                "-c:a", "aac",
+                "-b:a", "192k",
+                "-shortest",
+                str(output_path)
+            ]
+            res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
-        return {
-            "mode": "disk_cached",
-            "output_path": output_path,
-            "total_frames": total_frames,
-            "duration": total_duration,
-            "elapsed_seconds": round(elapsed, 2),
-            "render_fps": round(fps_achieved, 2),
-            "ffmpeg_exit": res.returncode
-        }
+            elapsed = time.time() - start_time
+            fps_achieved = total_frames / max(0.001, elapsed)
+
+            return {
+                "mode": "disk_cached",
+                "output_path": output_path,
+                "total_frames": total_frames,
+                "duration": total_duration,
+                "elapsed_seconds": round(elapsed, 2),
+                "render_fps": round(fps_achieved, 2),
+                "ffmpeg_exit": res.returncode
+            }
+        finally:
+            if cleanup_frames and frames_dir.exists():
+                shutil.rmtree(frames_dir, ignore_errors=True)

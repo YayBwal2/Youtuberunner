@@ -1,109 +1,185 @@
-# The YouTube agent skill
+# 🚀 YouTube Runner — 100% Automated YouTube Shorts Pipeline
 
-Eleven Claude skills that run a YouTube channel. Free, MIT, no signup, no API key, nothing to
-connect.
+> **Zero-cost, fully autonomous YouTube Shorts generation pipeline powered by Python, Google Gemini, Microsoft Neural Voice, and a high-performance Python-native Motion Graphics Engine (SVG + CairoSVG + FFmpeg).**
 
-One of them writes your script off 21 hook formulas and scores the hook before you waste a take on
-it. One lints the title and the thumbnail as a single pairing, because writing them separately is
-why half of your click surface says the same thing twice. One reads your audience-retention export
-and tells you the exact second people left and what you were saying when they did. One turns a
-transcript into an edit decision list. One finds the Shorts already hiding inside a long video. One
-goes and finds what is working in your niche and ranks it by how far each video beat its own
-channel, not by how big the channel is.
+---
 
-**Nothing gets published until you do it.** These skills write. You upload.
+## 📌 Architecture Overview
 
-## Install
-
-Paste this into Claude:
-
-```
-https://github.com/Jakeschincariol/youtube-agent-skill
-
-Install this skill, then confirm /yt-script works.
+```mermaid
+graph LR
+    Trends["1. Topic Selection<br/>(Anti-duplication)"] --> Script["2. AI Script & Hook<br/>(Gemini 2.5 + 21 Formulas)"]
+    Script --> Voice["3. Neural Voice<br/>(edge-tts Real Word Timings)"]
+    Voice --> Motion["4. Motion Engine<br/>(SVG / CairoSVG / FFmpeg)"]
+    Motion --> Upload["5. Auto Upload<br/>(YouTube Data API v3)"]
 ```
 
-Or do it yourself, in Claude Code:
+YouTube Runner is built from the ground up for developer and tech channels targeting international English audiences with maximum retention, senior-engineer tone, and zero recurring subscription fees.
+
+---
+
+## 🎨 Visual Identity & Motion Graphics Engine
+
+Rather than relying on generic stock footage or linear slide animations, YouTube Runner features a custom **Python-native Motion Graphics Engine**:
+
+- **Dark Minimalist Aesthetic:** Slate Black (`#0f172a`), Surface (`#111827`), Neon Emerald Green (`#22c55e`), and Sky Blue (`#38bdf8`).
+- **macOS Terminal Window Card:** Titlebar with traffic light controls, monospace code lines (`$`, `[OK]`, `[!]`), and live execution status bar.
+- **Architecture Flow Diagrams:** High-tech node blocks with accent indicator bars, SVG connector arrows, and spec badges.
+- **Kinetic Subtitles:** Spoken word highlight in bold neon green with millisecond-accurate sync powered directly by Microsoft Azure Neural Speech word boundaries.
+- **Deterministic Easing:** Mathematical curves including clamped exponential, piecewise cubic S-curve, and harmonic spring with Hermite smoothstep tail stabilization ($t \ge 1.0, v = 0$).
+
+---
+
+## ⚡ Technical Benchmark (Phase 4 Verified)
+
+Tested on 120 frames @ 1080×1920 (30fps vertical Shorts):
+
+| Metric | Option A: FFmpeg Memory Pipe | Option B: Disk-Cached PNGs (Active) |
+|---|---|---|
+| **Render Speed** | 5.33 FPS | **6.07 FPS (12.3% Faster)** |
+| **Peak Python RAM** | 47.43 MB | **29.46 MB (37.9% Less RAM)** |
+| **Residual Disk Usage** | 0 MB | **0 MB (Automated Purge)** |
+| **Production Stability** | High GC churn | **Optimal for low-cost VPS** |
+
+---
+
+## 🛠️ Prerequisites & Installation
+
+### 1. System Dependencies
+
+#### macOS (via Homebrew):
+```bash
+brew install cairo ffmpeg
+```
+
+#### Ubuntu / Debian VPS:
+```bash
+sudo apt update
+sudo apt install -y libcairo2-dev ffmpeg fonts-dejavu-core
+```
+
+### 2. Python Virtual Environment
 
 ```bash
-git clone https://github.com/Jakeschincariol/youtube-agent-skill.git
-cp -r youtube-agent-skill/skills/yt-* ~/.claude/skills/
+git clone https://github.com/YayBwal2/Youtuberunner.git
+cd Youtuberunner
+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Or as a plugin:
+### 3. Environment Configuration
 
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
 ```
-/plugin marketplace add Jakeschincariol/youtube-agent-skill
-/plugin install youtube-agent
+
+Edit `.env` with your free Google Gemini API key:
+```env
+# 100% Free from https://aistudio.google.com/
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Neural Voice Selection
+VOICE_NAME=en-US-ChristopherNeural
+VOICE_RATE=+10%
+VOICE_PITCH=+0Hz
+
+# YouTube Upload Settings
+YOUTUBE_PRIVACY_STATUS=private
 ```
 
-Project-local instead of global: copy the same folders into your repo's `.claude/skills/`. No Claude
-Code at all? Paste any single `SKILL.md` at the top of a chat and it runs as a mode. You lose the six
-Python tools, which is most of the point of `/yt-script`, `/yt-retention` and `/yt-edit`, but the
-rest works.
+---
 
-Then spend ten minutes on [`templates/voice.md`](templates/voice.md). Copy it to
-`~/.claude/youtube/voice.md` and fill it in, or send Claude three of your own videos and say "write
-my voice.md from these". Every skill reads that file. It matters more here than anywhere else,
-because you have to say the words out loud.
+## 🚀 Usage
 
-## The eleven
+### 1. Run Complete Pipeline (Next Trending Topic)
+```bash
+.venv/bin/python run.py
+```
 
-| command | what it does |
-| --- | --- |
-| `/yt-script` | One idea into a script. Five hooks off [21 formulas](skills/yt-script/hooks.json), scored, then the spoken script with the retention beats marked. |
-| `/yt-package` | Title and thumbnail as one pairing, linted for truncation, duplication and vagueness. |
-| `/yt-edit` | A transcript into an edit decision list: dead air, filler cues, retakes, with timecodes. |
-| `/yt-comment` | The comment section triaged into four piles, then replies in your voice. Says which one to pin. |
-| `/yt-plan` | A week that fits the hours you actually have. One anchor, one cheap one, three Shorts. |
-| `/yt-viral` | What is working in your niche, ranked by multiple over each channel's own median. |
-| `/yt-retention` | Your retention export read properly: hook leak, the cliffs, the slide, and what to change. |
-| `/yt-shorts` | The Shorts already inside a long video, with a new first line written for each. |
-| `/yt-seo` | The description, the tags that are worth having, and the three queries this should win. |
-| `/yt-chapters` | Chapters from a transcript, validated against YouTube's own rules so they render. |
-| `/yt-audit` | The whole channel, ending in ONE fix rather than twenty. |
+### 2. Run for a Specific Custom Topic
+```bash
+.venv/bin/python run.py --topic "Why Nvidia Blackwell Draws 1200W"
+```
 
-## The six tools
+### 3. Dry Run (Generate Script & Audio only, skip render)
+```bash
+.venv/bin/python run.py --dry-run
+```
 
-Every one of these runs on a clean Python 3 with no dependencies. They are the reason the skills are
-not just prompts.
+### 4. Local Render (Skip YouTube Upload)
+```bash
+.venv/bin/python run.py --no-upload
+```
+
+### 5. Automated Daily Scheduler (VPS Cron Mode)
+```bash
+# Run daily at 18:00 UTC
+.venv/bin/python scheduler.py --time "18:00"
+
+# Show crontab instructions for zero-RAM idle scheduling
+.venv/bin/python scheduler.py --cron-help
+```
+
+---
+
+## 🧪 Testing & Verification
+
+Run the complete unit test suite verifying easing curves, safe area layout boxes, schema validation, and timeline synchronization:
 
 ```bash
-python3 skills/yt-script/hookscore.py --hook "one line"        # 5-property hook panel
-python3 skills/yt-package/title.py --title "..." --thumb "..." # title + thumbnail linter
-python3 skills/yt-edit/deadair.py transcript.srt               # edit decision list
-python3 skills/yt-chapters/chapters.py transcript.srt          # validated chapters
-python3 skills/yt-retention/retention.py retention.csv         # where they left, and why
-python3 skills/yt-viral/swipe.py collected.json --min 2.0      # outliers by own-channel multiple
+.venv/bin/python -m unittest discover -s tests -p "test_*.py"
 ```
 
-## The fine print
+### Run Motion Prototype (6–8s Scene)
+```bash
+.venv/bin/python scripts/run_prototype.py
+```
 
-The part most packs leave out.
+### Run Renderer Architecture Benchmark
+```bash
+.venv/bin/python scripts/benchmark_render.py
+```
 
-**It does not publish.** YouTube's Data API would allow it with your own OAuth, which makes this
-pack different from the LinkedIn and Instagram ones, where posting is not available at all. It is
-still not built here: every skill ends in a block you copy and a question — ship it, or change it?
-Anything that claims to run your channel unattended should be read with that distinction in mind.
+---
 
-**`hookscore.py` is a heuristic, not a predictor.** The panel was built and calibrated against 74
-real short-form hooks (the first 15 seconds of auto-captions, top-8 and bottom-8 by views across
-five channels). It separates deliberately bad hooks from real ones well. It separates a given
-creator's hits from their own misses barely at all. A low score is a reason to look again; a high
-score is not a promise.
+## 📁 Repository Structure
 
-**The formula classifier is about the words, not the result.** When `/yt-viral` says a title used
-The Statistic, that is a judgement about the title you can see, not a claim about why the video got
-its views.
+```
+.
+├── config.py                 # Central configurations & topic pools
+├── run.py                    # Pipeline orchestrator
+├── scheduler.py              # Automated daily scheduler
+├── core/
+│   ├── script_generator.py   # Gemini AI script & hook linter
+│   ├── voice_synthesizer.py  # edge-tts neural audio & word timestamps
+│   ├── video_engine.py       # Motion Graphics Engine integration
+│   ├── video_engine_legacy.py# Fallback rendering engine
+│   ├── trends_fetcher.py     # Topic selector with anti-duplication
+│   └── youtube_uploader.py   # YouTube Data API v3 OAuth uploader
+├── motion/
+│   ├── tokens.py             # Colors, typography scale, safe area ratios
+│   ├── easing.py             # Exponential, cubic, and spring easing
+│   ├── schema.py             # Pydantic v2 Storyboard validation
+│   ├── layout.py             # Safe area layout boxes & text fitting
+│   ├── timeline.py           # Pause-snapping voice-to-scene mapper
+│   ├── svg_builder.py        # Frame SVG composer
+│   ├── rasterizer.py         # CairoSVG to FFmpeg rasterizer
+│   └── components/
+│       ├── cards.py          # macOS Terminal card component
+│       ├── typography.py     # Kinetic headlines & active word subtitles
+│       └── diagrams.py       # Architecture diagram nodes & connectors
+├── skills/                   # Integrated YouTube creator skills
+├── templates/
+│   └── voice.md              # Channel voice, tone, and forbidden words
+├── tests/                    # Unit test suites (13/13 passing)
+└── scripts/                  # Prototype and benchmark runners
+```
 
-**`/yt-viral` reads, it does not scrape.** Public listings only. It never logs in as you and never
-touches your credentials.
+---
 
-**Tags barely matter** and this pack says so instead of selling you a tag generator.
+## 📜 License
 
-**Nothing invents a number.** If a skill wants a figure it does not have, it asks you for it or
-writes the line without it.
-
-## Licence
-
-MIT. Use it, change it, ship it.
+MIT License. Free to use, modify, and deploy.

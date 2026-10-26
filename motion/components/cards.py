@@ -107,6 +107,17 @@ def render_terminal_card_svg(
     <g>
       {lines_joined}
     </g>
+
+    <!-- Terminal Footer Status Bar -->
+    <path d="M 0 {h - 44} L {w} {h - 44} L {w} {h - 20} Q {w} {h} {w - 20} {h} L 20 {h} Q 0 {h} 0 {h - 20} Z" 
+          fill="{HEX_PALETTE['surface_title']}" opacity="0.95"/>
+    <line x1="0" y1="{h - 44}" x2="{w}" y2="{h - 44}" stroke="{HEX_PALETTE['border']}" stroke-width="1.5"/>
+    <text x="28" y="{h - 16}" font-family="SF Mono, Menlo, monospace" font-size="16" fill="{HEX_PALETTE['text_muted']}">
+      PYTHON 3.14  |  SYS: OK  |  PID: 4092
+    </text>
+    <circle cx="{w - 115}" cy="{h - 22}" r="5" fill="{HEX_PALETTE['primary']}"/>
+    <text x="{w - 24}" y="{h - 16}" font-family="SF Mono, Menlo, monospace" font-size="16" font-weight="bold" 
+          fill="{HEX_PALETTE['primary']}" text-anchor="end">ACTIVE</text>
   </g>
 """
     return svg
