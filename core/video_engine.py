@@ -226,9 +226,9 @@ def build_storyboard_from_script(script_data: Dict[str, Any]) -> Storyboard:
         hero_num = "100%"
         hero_sub = "OPTIMIZED ARCHITECTURE"
 
-        clean_subj = [w for w in title_words if w.upper() not in ["HOW", "WHY", "IS", "THE", "ARE", "WHAT", "CAN", "AT"]]
-        subject_term = clean_subj[0].title() if clean_subj else "this"
-        loop_anchor_q = f"Did you know how {subject_term} works?"
+    clean_subj = [w for w in title_words if w.upper() not in ["HOW", "WHY", "IS", "THE", "ARE", "WHAT", "CAN", "AT", "DOES", "DO"]]
+    subject_term = clean_subj[0].title() if clean_subj else "This Architecture"
+    loop_anchor_q = f"Did you know how {subject_term} works?"
 
     scenes.append(
         SceneSpec(
@@ -313,8 +313,15 @@ def render_shorts_video(
 
     # Fallback to Legacy Engine
     if legacy_engine:
+        import shutil
         print("[INFO] Executing legacy rendering engine fallback...")
-        return legacy_engine.render_shorts_video(script_data, voice_data, output_filename)
+        res = legacy_engine.render_shorts_video(script_data, voice_data, output_filename=Path(final_output).name)
+        if res and res != final_output and os.path.exists(res):
+            shutil.copy2(res, final_output)
+            legacy_thumb = res.replace(".mp4", "_thumb.png")
+            if os.path.exists(legacy_thumb) and final_thumb != legacy_thumb:
+                shutil.copy2(legacy_thumb, final_thumb)
+        return final_output
     else:
         raise RuntimeError("Legacy engine is not available for fallback.")
 

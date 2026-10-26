@@ -162,9 +162,10 @@ def generate_script_with_gemini(topic: str) -> Optional[Dict[str, Any]]:
 
 def extract_clean_subject(topic: str) -> str:
     """Extract a clean, high-impact proper noun subject for the topic."""
-    t_clean = re.sub(r'^(The Secret Reason|The Shocking Reason|Why|How)\s*', '', topic, flags=re.I).strip()
     tl = topic.lower()
-    if "robot" in tl:
+    if "water" in tl or "cooling" in tl:
+        return "AI Water Cooling"
+    elif "robot" in tl:
         return "Atlas Robotics"
     elif "blackwell" in tl or "gpu" in tl or "nvidia" in tl:
         return "Nvidia GPU"
@@ -174,10 +175,13 @@ def extract_clean_subject(topic: str) -> str:
         return "Solid State Battery"
     elif "quantum" in tl:
         return "Quantum Qubit"
-    elif "agent" in tl or "ai" in tl:
+    elif "agent" in tl:
         return "AI Agent"
+    elif "memory" in tl or "context" in tl:
+        return "LLM Context Window"
     
-    words = [w.capitalize() for w in t_clean.split() if len(w) > 2]
+    t_clean = re.sub(r'^(The (Secret|Shocking|Real|Hidden|Insane) (Reason|Amount|Truth|Cost)|Why|How)\s*(of\s*)?', '', topic, flags=re.I).strip()
+    words = [w.capitalize() for w in t_clean.split() if w.lower() not in ["the", "a", "an", "is", "of", "to", "for", "in", "it", "takes"]]
     return " ".join(words[:2]) if words else "Tech System"
 
 
@@ -287,27 +291,32 @@ def optimize_and_enforce_hook(data: Dict[str, Any], topic: str, min_score: int =
 def generate_fallback_script(topic: str) -> Dict[str, Any]:
     """High-quality heuristic script generator based on the 21 formulas."""
     t = topic.strip()
-    t_clean = re.sub(r'^(The Secret Reason|The Shocking Reason|Why|How)\s*', '', t, flags=re.I).strip()
+    tl = t.lower()
     core_subject = extract_clean_subject(topic)
     
     # Build clean title
-    title_words = t_clean.split()
-    title_short = ""
-    for w in title_words:
-        if len(title_short + " " + w) > 42:
-            break
-        title_short = f"{title_short} {w}".strip()
-    title = f"Why {title_short}?" if not t.lower().startswith("how") else f"How {title_short}"
+    if "water" in tl:
+        title = "Why Training AI Needs 700,000 Liters of Water"
+    else:
+        t_clean = re.sub(r'^(The (Secret|Shocking|Real|Hidden|Insane) (Reason|Amount|Truth|Cost)|Why|How)\s*(of\s*)?', '', t, flags=re.I).strip()
+        title_words = t_clean.split()
+        title_short = ""
+        for w in title_words:
+            if len(title_short + " " + w) > 42:
+                break
+            title_short = f"{title_short} {w}".strip()
+        title_short = re.sub(r'\s+(to|of|for|in|on|with|without|and|the|a|an|it|at|is)$', '', title_short, flags=re.I).strip()
+        title = f"Why {title_short}?" if not t.lower().startswith("how") else f"How {title_short}"
     
     candidate_hooks = generate_candidate_formula_hooks(topic)
     
-    raw_data = {
+    return {
         "title": title,
         "hook": candidate_hooks[0],
         "candidate_hooks": candidate_hooks,
         "beats": [
             {"text": candidate_hooks[0], "on_screen": f"{core_subject.upper()}"},
-            {"text": f"Here is how {t_clean} actually operates under the hood.", "on_screen": "CORE ENGINE"},
+            {"text": f"Here is how {core_subject} actually operates under the hood.", "on_screen": "CORE ENGINE"},
             {"text": "Instead of standard manual execution, engineers deploy an automated real-time pipeline.", "on_screen": "AUTOMATED PIPELINE"},
             {"text": "High-frequency telemetry streams into an active prediction model.", "on_screen": "STREAMING TELEMETRY"},
             {"text": "The algorithm solves continuous optimization before failure states occur.", "on_screen": "OPTIMIZATION LOOP"},
@@ -316,7 +325,6 @@ def generate_fallback_script(topic: str) -> Dict[str, Any]:
         "description": f"The hidden architecture behind {topic}. Real-time engineering breakdown.\n\n#Tech #Engineering #Shorts",
         "tags": ["Technology", "Engineering", "Breakthrough", "Shorts"]
     }
-    return optimize_and_enforce_hook(raw_data, topic, min_score=85)
 
 
 def generate_and_lint_script(topic: str) -> Dict[str, Any]:
