@@ -19,7 +19,7 @@ FONTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Gemini API
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 # TTS Voice Settings (Microsoft edge-tts - 100% Free)
 # Selected voice: en-US-GuyNeural (Energetic, natural tech narrator)

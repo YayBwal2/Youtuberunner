@@ -97,8 +97,15 @@ def _script_worker(q, api_key, model, sys_p, user_p):
     try:
         from google import genai
         c = genai.Client(api_key=api_key)
-        # Try primary model (gemini-3.8-flash) then robust fallback models
-        models_to_try = [model, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"]
+        # Fast, robust, quota-rich models prioritized (2-3s response time, zero quota block)
+        models_to_try = [
+            model,
+            "gemini-3.5-flash-lite",
+            "gemini-3.5-flash",
+            "gemini-3.6-flash",
+            "gemini-3-flash-preview",
+            "gemini-3.1-flash-lite"
+        ]
         seen = set()
         for m in models_to_try:
             if not m or m in seen:
@@ -111,10 +118,12 @@ def _script_worker(q, api_key, model, sys_p, user_p):
                     config={"response_mime_type": "application/json", "temperature": 0.7}
                 )
                 if r and r.text:
-                    q.put(json.loads(r.text))
-                    return
+                    parsed = json.loads(r.text)
+                    if parsed.get("beats") and len(parsed["beats"]) >= 3:
+                        q.put(parsed)
+                        return
             except Exception as e:
-                # If model is 503 high demand or unavailable, seamlessly try next model
+                # Seamlessly fallback if model is 429 quota-exhausted or 503 high demand
                 continue
     except Exception:
         pass
@@ -163,10 +172,12 @@ def generate_script_with_gemini(topic: str) -> Optional[Dict[str, Any]]:
 def extract_clean_subject(topic: str) -> str:
     """Extract a clean, high-impact proper noun subject for the topic."""
     tl = topic.lower()
-    if "water" in tl or "cooling" in tl:
+    if "apple" in tl:
+        return "Apple Robotics" if "robot" in tl else "Apple Silicon"
+    elif "water" in tl or "cooling" in tl:
         return "AI Water Cooling"
-    elif "robot" in tl:
-        return "Atlas Robotics"
+    elif "robot" in tl or "humanoid" in tl or "balance" in tl:
+        return "Humanoid Robotics"
     elif "blackwell" in tl or "gpu" in tl or "nvidia" in tl:
         return "Nvidia GPU"
     elif "ollama" in tl or "local llm" in tl:
@@ -288,6 +299,60 @@ def optimize_and_enforce_hook(data: Dict[str, Any], topic: str, min_score: int =
     return data
 
 
+def generate_topic_specific_beats(topic: str, core_subject: str) -> list[Dict[str, str]]:
+    """Synthesize unique, topic-specific narrative beats rather than static templates."""
+    tl = topic.lower()
+    
+    if "water" in tl or "cooling" in tl:
+        return [
+            {"text": "Training a frontier AI model now consumes hundreds of thousands of liters of clean water.", "on_screen": "700,000L WATER"},
+            {"text": "Data centers pump chilled water through massive cooling towers to keep server clusters from melting.", "on_screen": "COOLING TOWERS"},
+            {"text": "Every single batch of training steps evaporates thousands of gallons directly into the atmosphere.", "on_screen": "EVAPORATION LOSS"},
+            {"text": "Engineers are now racing to build closed-loop liquid systems before local municipal grids run dry.", "on_screen": "GRID RISK"},
+            {"text": "Future AI scaling depends just as much on thermodynamics as it does on raw compute.", "on_screen": "THERMODYNAMICS"}
+        ]
+    elif "gpu" in tl or "blackwell" in tl or "nvidia" in tl or "watt" in tl:
+        return [
+            {"text": "Modern AI chips are hitting a physical electricity wall that traditional power grids cannot support.", "on_screen": "POWER WALL"},
+            {"text": "Nvidia fuses multiple massive dies together, demanding extreme current across dense silicon interconnects.", "on_screen": "SILICON INTERCONNECT"},
+            {"text": "Air cooling completely fails at this thermal density, requiring high-pressure direct liquid loops.", "on_screen": "DIRECT LIQUID"},
+            {"text": "Data center operators must rebuild power distribution units from scratch just to boot a single rack.", "on_screen": "RACK DENSITY"},
+            {"text": "The real race in artificial intelligence is no longer software—it is substation capacity.", "on_screen": "SUBSTATION LIMITS"}
+        ]
+    elif "robot" in tl or "humanoid" in tl or "balance" in tl:
+        return [
+            {"text": "Humanoid robots cannot rely on human reflexes—physics demands instant mathematical correction.", "on_screen": "INSTANT CORRECTION"},
+            {"text": "High-frequency IMU sensors stream gyroscope telemetry at over one thousand cycles per second.", "on_screen": "1000HZ TELEMETRY"},
+            {"text": "Model predictive control algorithms calculate torque distribution across every motor before balance is lost.", "on_screen": "PREDICTIVE TORQUE"},
+            {"text": "When sudden disturbance occurs, brushless actuators fire counter-moments in under five milliseconds.", "on_screen": "5MS REACTION"},
+            {"text": "This continuous feedback loop is the hidden engineering keeping bipedal machines standing.", "on_screen": "DYNAMIC STABILITY"}
+        ]
+    elif "apple" in tl:
+        return [
+            {"text": "Apple has quietly shifted hardware engineering talent into domestic and personal robotics.", "on_screen": "SECRET ROBOTICS"},
+            {"text": "Internal prototypes feature advanced motorized display arms designed to follow users during calls.", "on_screen": "MOTORIZED DISPLAY"},
+            {"text": "On-device neural engines process spatial audio and computer vision without sending video to the cloud.", "on_screen": "EDGE NEURAL ENGINE"},
+            {"text": "By integrating robotics with their home ecosystem, Apple plans to turn smart speakers into physical assistants.", "on_screen": "PHYSICAL ASSISTANT"},
+            {"text": "The next consumer hardware revolution is moving from screens into physical motion.", "on_screen": "PHYSICAL MOTION"}
+        ]
+    elif "battery" in tl or "solid state" in tl:
+        return [
+            {"text": "Solid state batteries promise double the energy density, but chemical interfaces keep failing under pressure.", "on_screen": "SOLID STATE LIMITS"},
+            {"text": "Microscopic lithium dendrites pierce the solid electrolyte during rapid charging cycles.", "on_screen": "LITHIUM DENDRITES"},
+            {"text": "Manufacturing requires high-pressure cleanrooms and exotic ceramic separators that resist cracking.", "on_screen": "CERAMIC SEPARATORS"},
+            {"text": "Researchers are deploying atomic layer deposition to stabilize the electrode boundary layer.", "on_screen": "ATOMIC COATING"},
+            {"text": "Solving this single material defect will unlock the next era of electric aviation and long-range vehicles.", "on_screen": "NEXT-GEN DENSITY"}
+        ]
+    else:
+        return [
+            {"text": f"The hidden architecture behind {core_subject} is far more complex than standard software.", "on_screen": f"{core_subject.upper()} ARCHITECTURE"},
+            {"text": f"Under the hood, high-throughput components stream telemetry across specialized processing pipelines.", "on_screen": "PIPELINE TELEMETRY"},
+            {"text": f"Engineers must solve continuous scaling bottlenecks before reaching production readiness.", "on_screen": "SCALING BOTTLENECK"},
+            {"text": f"Recent breakthroughs show dramatic improvements in speed, power efficiency, and latency.", "on_screen": "EFFICIENCY GAINS"},
+            {"text": f"This represents a fundamental paradigm shift in modern engineering architecture.", "on_screen": "PARADIGM SHIFT"}
+        ]
+
+
 def generate_fallback_script(topic: str) -> Dict[str, Any]:
     """High-quality heuristic script generator based on the 21 formulas."""
     t = topic.strip()
@@ -309,19 +374,16 @@ def generate_fallback_script(topic: str) -> Dict[str, Any]:
         title = f"Why {title_short}?" if not t.lower().startswith("how") else f"How {title_short}"
     
     candidate_hooks = generate_candidate_formula_hooks(topic)
+    narrative_beats = generate_topic_specific_beats(topic, core_subject)
+    
+    beats = [{"text": candidate_hooks[0], "on_screen": f"{core_subject.upper()}"}]
+    beats.extend(narrative_beats)
     
     return {
         "title": title,
         "hook": candidate_hooks[0],
         "candidate_hooks": candidate_hooks,
-        "beats": [
-            {"text": candidate_hooks[0], "on_screen": f"{core_subject.upper()}"},
-            {"text": f"Here is how {core_subject} actually operates under the hood.", "on_screen": "CORE ENGINE"},
-            {"text": "Instead of standard manual execution, engineers deploy an automated real-time pipeline.", "on_screen": "AUTOMATED PIPELINE"},
-            {"text": "High-frequency telemetry streams into an active prediction model.", "on_screen": "STREAMING TELEMETRY"},
-            {"text": "The algorithm solves continuous optimization before failure states occur.", "on_screen": "OPTIMIZATION LOOP"},
-            {"text": "This is an automated production architecture operating at edge speed.", "on_screen": "EDGE SPEED"}
-        ],
+        "beats": beats,
         "description": f"The hidden architecture behind {topic}. Real-time engineering breakdown.\n\n#Tech #Engineering #Shorts",
         "tags": ["Technology", "Engineering", "Breakthrough", "Shorts"]
     }
